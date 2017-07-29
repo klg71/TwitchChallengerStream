@@ -1,0 +1,3 @@
+Client-id: 6s9e7fhcj94dwb9359ohlzcwi0q4tn
+Client-Secret: nrrv2ufu6cudzhp83zvk7vf7z3j66y
+oauth: oauth:z3g1uw8wp4hul95q9ngha319j4jrj2
