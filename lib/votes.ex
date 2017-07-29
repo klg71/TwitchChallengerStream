@@ -13,11 +13,11 @@ defmodule RiotApi.Votes do
     {:noreply, new_votes}
   end
 
-  def handle_cast(:reset_votes, votes) do
+  def handle_cast(:reset_votes, _votes) do
     {:noreply, %{}}
   end
 
-  def handle_call(:get_votes, _from, _votes) do
+  def handle_call(:get_votes, _from, votes) do
     {:reply, votes, votes}
   end
 

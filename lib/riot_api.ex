@@ -12,8 +12,6 @@ defmodule RiotApi do
 
 
   """
-  @url ""
-  @key ""
 
   def start_link(summoner_file) do
     config = %{:summoner_file => summoner_file, :updated => ~N[2000-01-01 00:00:00],:summoners => [], :currentgame => %{}}
@@ -121,7 +119,7 @@ defmodule RiotApi do
   end
 
   def get_summoner_id(summoner) do
-    {:ok, id} = url<>"/lol/summoner/v3/summoners/by-name/"<>(URI.encode(summoner))<>"?api_key="<>key 
+    {:ok, id} = url()<>"/lol/summoner/v3/summoners/by-name/"<>(URI.encode(summoner))<>"?api_key="<>key() 
          |> HTTPotion.get()
          |> Map.get(:body)
          |> Poison.decode
@@ -162,7 +160,7 @@ defmodule RiotApi do
   end
 
   def get_matches_for_summoners([head|[]]) do
-    {:ok, match} = url<>"/lol/spectator/v3/active-games/by-summoner/"<>URI.encode(Integer.to_string(Map.get(head, "id")))<>"?api_key="<>key 
+    {:ok, match} = url()<>"/lol/spectator/v3/active-games/by-summoner/"<>URI.encode(Integer.to_string(Map.get(head, "id")))<>"?api_key="<>key() 
          |> HTTPotion.get()
          |> Map.get(:body)
          |> Poison.decode 
@@ -189,7 +187,7 @@ defmodule RiotApi do
   end
 
   def get_matches_for_summoners([head|tail]) do
-    {:ok, match} = url<>"/lol/spectator/v3/active-games/by-summoner/"<>URI.encode(Integer.to_string(Map.get(head, "id")))<>"?api_key="<>key 
+    {:ok, match} = url()<>"/lol/spectator/v3/active-games/by-summoner/"<>URI.encode(Integer.to_string(Map.get(head, "id")))<>"?api_key="<>key() 
          |> HTTPotion.get()
          |> Map.get(:body,"{\"status\":{\"status_code\": 429}}")
          |> Poison.decode 
@@ -215,7 +213,7 @@ defmodule RiotApi do
   end
 
   def is_match_ended(gameid) do
-    {:ok, id} = url<>"/lol/match/v3/matches/"<>URI.encode(Integer.to_string(gameid))<>"?api_key="<>key 
+    {:ok, id} = url()<>"/lol/match/v3/matches/"<>URI.encode(Integer.to_string(gameid))<>"?api_key="<>key() 
          |> HTTPotion.get()
          |> Map.get(:body)
          |> Poison.decode 
@@ -252,7 +250,7 @@ defmodule RiotApi do
   
 
   def get_match_info(matchid) do
-    {:ok, match} = url<>"/lol/match/v3/matches/"<>URI.encode(Integer.to_string(matchid))<>"?api_key="<>key 
+    {:ok, match} = url()<>"/lol/match/v3/matches/"<>URI.encode(Integer.to_string(matchid))<>"?api_key="<>key() 
          |> HTTPotion.get()
          |> Map.get(:body)
          |> Poison.decode 
@@ -260,11 +258,11 @@ defmodule RiotApi do
   end
 
   defp url do
-    Application.fetch-env!(:riotapi, :url)
+    Application.fetch_env!(:riot_api, :url)
   end
 
   defp key do
-    Application.fetch-env!(:riotapi, :riot_key)
+    Application.fetch_env!(:riot_api, :riot_key)
   end
 
 
