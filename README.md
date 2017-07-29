@@ -1,19 +1,15 @@
-# RiotApi
+# TwitchChallengerStream
+This Project aims to provide a league streaming experience, for summoners that have no League Client installed on their system or simply enjoy watching high elo gamplay without further commentary.
 
-**TODO: Add description**
+This project currently uses a fixed list of challenger players from EUW (updated at 25.07.2017) and checks whether someone of this players is playing and if yes collects them into a list.
 
-## Installation
+The viewer can now vote which player they want to see and a few time later the game is spectated and streamd to twitch.
+After the game, the project reads out the made votes and starts the next game according to the highest votes.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `riot_api` to your list of dependencies in `mix.exs`:
+If i could made it to a Project with this admission, i could make the challenger list dynamic and add even more summoners to have a wider spectrum to draw from.
 
-```elixir
-def deps do
-  [{:riot_api, "~> 0.1.0"}]
-end
-```
+This application is written in Elixir (I wanted to try something new) and uses currently the Spectator and Match Api to draw data from.
+Feel free to visit my Github page
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/riot_api](https://hexdocs.pm/riot_api).
-
+Best Regards
+SaltySoraka
