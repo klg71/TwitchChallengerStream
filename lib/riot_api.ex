@@ -94,10 +94,14 @@ defmodule RiotApi do
             [h|_] ->
               RiotApi.Bot.send_message("No valid votes, Spectating first summoner!")
               RiotApi.Bot.send_message("Spectating: "<>h<>" GLHF!")
+              RiotApi.Twitch.send_feed_post("Spectating: "<>h<>" GLHF!")
+              RiotApi.Twitch.send_channel_title("Spectating EUW Challenger: "<>h)
               open_game(h)
           end
       [{name,_vote}|_] ->
         RiotApi.Bot.send_message("Spectating: "<>name<>" GLHF!")
+        RiotApi.Twitch.send_feed_post("Spectating: "<>name<>" GLHF!")
+        RiotApi.Twitch.send_channel_title("Spectating EUW Challenger: "<>name)
         open_game(name)
       end
     {:noreply, config}

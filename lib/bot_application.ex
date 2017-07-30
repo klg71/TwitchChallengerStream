@@ -14,6 +14,7 @@ defmodule RiotApi.Bot.Application do
       worker(RiotApi.Bot, [%{:nick => "klg71"}]),
       worker(RiotApi.Votes, [%{}]),
       worker(RiotApi, ["ids_comp.txt"])
+      worker(RiotApi.Twitch, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
