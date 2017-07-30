@@ -10,9 +10,9 @@ use Mix.Config
 
 # You can configure for your application as:
 #
-config :riot_api,
-    key: :value,
-    url: "test"
+#config :riot_api,
+#    key: :value,
+#    url: "test"
 #
 # And access this configuration in your application as:
 #

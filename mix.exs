@@ -18,6 +18,7 @@ defmodule RiotApi.Mixfile do
     [
       extra_applications: [:logger],
       applications: [:httpotion,],
+      env: [
       mod: {RiotApi.Bot.Application, []},
     ]
   end

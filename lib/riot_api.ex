@@ -176,7 +176,7 @@ defmodule RiotApi do
          :timer.sleep(10_000)
          get_matches_for_summoners([head|[]])
       %{"status" => %{"status_code" => 500}} -> []
-      %{"gameMode"=>"MATCHED_GAME"} ->
+      %{"gameType"=>"MATCHED_GAME", "gameMode" => "CLASSIC"} ->
          Map.get(match, "participants")
          |> Enum.map(fn(%{"summonerId" => id, "summonerName" => name})->%{gameid: gameid,observer_key: observer_key, summonerid: id, name: name, match: match} end)
          |> Enum.filter(fn(%{summonerid: id}) -> Enum.any?([head|[]], fn(%{"id"=>chall_id}) -> chall_id == id end) end)
