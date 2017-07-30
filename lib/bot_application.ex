@@ -13,7 +13,7 @@ defmodule RiotApi.Bot.Application do
     children = [
       worker(RiotApi.Bot, [%{:nick => "klg71"}]),
       worker(RiotApi.Votes, [%{}]),
-      worker(RiotApi, ["ids_comp.txt"])
+      worker(RiotApi, ["ids_comp.txt"]),
       worker(RiotApi.Twitch, [])
     ]
 
