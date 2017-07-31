@@ -15,6 +15,7 @@ defmodule RiotApi.Bot.Application do
       worker(RiotApi.Votes, [%{}]),
       worker(RiotApi, ["ids_comp.txt"]),
       worker(RiotApi.Twitch, [])
+      worker(RiotApi.ChallengerCrawler, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

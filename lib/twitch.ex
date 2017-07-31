@@ -51,7 +51,7 @@ defmodule RiotApi.Twitch do
 
   def handle_cast({:set_channel_title, title}, config) do
     
-    url = url()<>"channels/"<>Integer.to_string(id())<>"?client_id="<>clientid
+    url = url()<>"channels/"<>Integer.to_string(id())<>"?client_id="<>clientid()
     IO.inspect(url)
 
     content=%{"channel": %{"status": title, "game": "League of Legends"}}

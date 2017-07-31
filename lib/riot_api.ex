@@ -70,6 +70,7 @@ defmodule RiotApi do
         RiotApi.Bot.send_message("GG!")
         RiotApi.Bot.send_message("Game ended! New game starts in 120s")
         RiotApi.Bot.send_message("Last chance to vote!")
+        Process.send_after(self(), :update, 1_000)
         Process.send_after(self(), :new_game, 120_000)
         {:noreply, Map.put(config, :currentgame, %{})}
   end
@@ -133,7 +134,7 @@ defmodule RiotApi do
   defp update_playing_summoners(config) do
     diff = NaiveDateTime.diff(NaiveDateTime.utc_now(), config.updated)
     cond do
-      diff > 300 ->
+      diff > 200 ->
         Logger.info "Get List of playing challengers"
         summoners = File.read!(config.summoner_file) 
           |> Poison.decode!
@@ -164,6 +165,7 @@ defmodule RiotApi do
   end
 
   def get_matches_for_summoners([head|[]]) do
+    :timer.sleep(100)
     {:ok, match} = url()<>"/lol/spectator/v3/active-games/by-summoner/"<>URI.encode(Integer.to_string(Map.get(head, "id")))<>"?api_key="<>key() 
          |> HTTPotion.get()
          |> Map.get(:body)
@@ -236,9 +238,7 @@ defmodule RiotApi do
   def spectate_game(gameid, observer_key) do
     current_path = File.cwd!
     File.cd("C:\\Riot Games\\League of Legends\\RADS\\projects\\lol_game_client\\releases\\0.0.1.123\\deploy")
-    IO.inspect(File.cwd!())
     shell = "start \"\" \"League of Legends.exe\" \"8394\" \"LoLLauncher.exe\" \"\" \"spectator spectator.euw1.lol.riotgames.com:80 "<>observer_key<>" "<>Integer.to_string(gameid)<>" EUW1\" \"-UseRads\""
-    IO.inspect(shell)
     Logger.info(shell)
     _task = Task.async(fn -> shell |> String.to_char_list |> :os.cmd end)
     :timer.sleep(1000)
@@ -247,7 +247,6 @@ defmodule RiotApi do
 
   def kill_game do
     shell = "taskkill /IM \"League of Legends.exe\""
-    IO.inspect(shell)
     Logger.info(shell)
     _task = Task.async(fn -> shell |> String.to_char_list |> :os.cmd end)
   end
@@ -268,7 +267,5 @@ defmodule RiotApi do
   defp key do
     Application.fetch_env!(:riot_api, :riot_key)
   end
-
-
 
 end
