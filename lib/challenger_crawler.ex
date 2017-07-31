@@ -13,19 +13,24 @@ defmodule RiotApi.ChallengerCrawler do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  def get_challenger_players(page) do
+  def handle_cast({:get_challenger_till_place, place, callback}, config) do
+    challengers = get_challenger_till_place(place)
+    callback.(challengers)
+    {:noreply, config}
+  end
+
+  defp get_challenger_players(page) do
     result = HTTPotion.get("http://www.leagueofgraphs.com/de/rankings/summoners/euw/page-"<>Integer.to_string(page))
              |> Map.get(:body)
     [_, table|_] = String.split(result, "<table class=\"data_table\">")
     [table_comp|_] = String.split(table, "</table>")
-    File.write!("test.txt",table_comp)
     String.split(table_comp,"<tr>")
     |> Enum.drop(2)
     |> Enum.map(fn(tr) -> parse_tr(tr) end)
     |> Enum.filter(fn(name) -> name != [] end)
   end
 
-  def get_challenger_till_place(number) do
+  defp get_challenger_till_place(number) do
     pages = div(number,100)+1
     1..pages |> Enum.to_list |> Enum.reduce([], fn(page, acc) -> acc++get_challenger_players(page) end)
     |> Enum.slice(0, number)
@@ -38,6 +43,10 @@ defmodule RiotApi.ChallengerCrawler do
         name
       _ -> []
     end
+  end
+
+  def get_challengers(place, callback) do
+    GenServer.cast(__MODULE__, {:get_challenger_till_place, place, callback})
   end
 
 end
