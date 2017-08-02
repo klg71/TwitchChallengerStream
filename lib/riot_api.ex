@@ -14,14 +14,26 @@ defmodule RiotApi do
   """
 
   def start_link(summoner_file) do
-    config = %{:summoner_file => summoner_file, :updated => ~N[2000-01-01 00:00:00],:summoners => [], :currentgame => %{}}
+    champions = File.read!("champions.txt")
+                |> Poison.decode!()
+                |> Map.get("data")
+                |> Enum.map(fn({champion,%{"id" => id}}) -> {id, champion} end)
+                |> Enum.reduce(%{},fn({id, champion}, acc) -> Map.put(acc, id, champion) end)
+    config = %{
+      :summoner_file => summoner_file,
+      :updated => ~N[2000-01-01 00:00:00],
+      :summoners => [],
+      :currentgame => %{},
+      :champions => champions
+    }
+    IO.inspect(config)
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
   def init(config) do
     Process.send_after(self(), :update, 5_000)
-    RiotApi.Bot.send_message("New game starts in 20s")
-    Process.send_after(self(), :new_game, 20_000)
+    # RiotApi.Bot.send_message("New game starts in 20s")
+    # Process.send_after(self(), :new_game, 20_000)
     {:ok, config}
   end
 
@@ -46,16 +58,21 @@ defmodule RiotApi do
   end
 
   def handle_cast({:updated_summoners, summoners}, config) do
+    Logger.info("Updated summoner list")
     new_config=Map.put(config, :updated, NaiveDateTime.utc_now()) |> Map.put(:summoners, summoners)
     {:noreply, new_config}
   end
 
   def handle_call(:get_playing_summoners, _from, config) do
-    {:reply, {Map.get(config, :summoners, []), config.updated}, config}
+    {:reply, Map.get(config, :summoners, []), config}
   end
 
   def handle_call(:get_current_game, _from, config) do
     {:reply, Map.get(config, :currentgame, %{}), config}
+  end
+
+  def handle_call(:get_champions, _from, config) do
+    {:reply, Map.get(config, :champions), config}
   end
 
 
@@ -146,11 +163,6 @@ defmodule RiotApi do
     end
   end
 
-  def update_playing_summoners do
-    GenServer.cast(__MODULE__, :update_playing_summoners)
-  end
-
-
   def get_playing_summoners do
     GenServer.call(__MODULE__, :get_playing_summoners)
   end
@@ -240,7 +252,7 @@ defmodule RiotApi do
     File.cd("C:\\Riot Games\\League of Legends\\RADS\\projects\\lol_game_client\\releases\\0.0.1.123\\deploy")
     shell = "start \"\" \"League of Legends.exe\" \"8394\" \"LoLLauncher.exe\" \"\" \"spectator spectator.euw1.lol.riotgames.com:80 "<>observer_key<>" "<>Integer.to_string(gameid)<>" EUW1\" \"-UseRads\""
     Logger.info(shell)
-    _task = Task.async(fn -> shell |> String.to_char_list |> :os.cmd end)
+    # _task = Task.async(fn -> shell |> String.to_char_list |> :os.cmd end)
     :timer.sleep(1000)
     File.cd(current_path)
   end
@@ -266,6 +278,10 @@ defmodule RiotApi do
 
   defp key do
     Application.fetch_env!(:riot_api, :riot_key)
+  end
+
+  def get_champions do
+    GenServer.call(__MODULE__, :get_champions)
   end
 
 end
