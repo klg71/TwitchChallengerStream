@@ -32,7 +32,6 @@ defmodule RiotApi.Bot do
   end
 
   def init([config]) do
-    RiotApi.update_playing_summoners()
     # Start the client and handler processes, the ExIrc supervisor is automatically started when your app runs
     {:ok, client}  = ExIrc.start_link!()
 
