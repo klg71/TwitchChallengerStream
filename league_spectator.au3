@@ -1,0 +1,5 @@
+WinActivate("League of Legends (TM) Client")
+Send ("{o down}")
+Send ("{o up}")
+Send ("{u down}")
+Send ("{u up}")

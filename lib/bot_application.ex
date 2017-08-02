@@ -14,7 +14,7 @@ defmodule RiotApi.Bot.Application do
       worker(RiotApi.Bot, [%{:nick => "klg71"}]),
       worker(RiotApi.Votes, [%{}]),
       worker(RiotApi, ["ids_comp.txt"]),
-      worker(RiotApi.Twitch, [])
+      worker(RiotApi.Twitch, []),
       worker(RiotApi.ChallengerCrawler, [])
     ]
 
