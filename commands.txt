@@ -1,0 +1,3 @@
+!sound:This is still an alpha version and sound could be buggy
+!stream:This is an automated High-Elo Stream
+!klg71:Low Platin Pleb

@@ -10,7 +10,8 @@ defmodule RiotApi.Bot do
               user:    "klg71",
               name:    nil,
               channel: "#klg71",
-              client:  nil
+              client:  nil,
+              commands: []
 
     def from_params(params) when is_map(params) do
       Enum.reduce(params, %Config{}, fn {k, v}, acc ->
@@ -42,7 +43,13 @@ defmodule RiotApi.Bot do
     Logger.debug "Connecting to #{config.server}:#{config.port}"
     Client.connect! client, config.server, config.port
 
-    {:ok, %Config{config | :client => client}}
+    commands = File.read!("commands.txt")
+               |> String.split("\r\n")
+               |> Enum.map(&(String.split(&1, ":")))
+               |> Enum.map(fn([command, text]) -> {command, text} end)
+    IO.inspect(commands)
+
+    {:ok, %Config{config | :client => client, :commands => commands}}
   end
 
   def handle_info({:connected, server, port}, config) do
@@ -118,8 +125,17 @@ defmodule RiotApi.Bot do
     {:noreply, config}
   end
 
+  def handle_cast({:add_command, command, text}, config) do
+    
+    {:noreply, %{config | :commands => config.commands ++ [{command, text}]}}
+  end
+
   def send_message(msg) do
     GenServer.cast(__MODULE__,{:send_message, msg})
+  end
+
+  def add_command(command, text) do
+    GenServer.cast(__MODULE__, {:add_command, command, text})
   end
 
   def terminate(_, config) do
@@ -137,7 +153,18 @@ defmodule RiotApi.Bot do
       "!summoners" -> Client.msg config.client, :privmsg, config.channel, format_players(RiotApi.get_playing_summoners())
       "!current" -> Client.msg config.client, :privmsg, config.channel, format_game(RiotApi.get_current_game())
       "!help" -> Client.msg config.client, :privmsg, config.channel, format_help()
-      _ -> nil
+      command -> Client.msg config.client, :privmsg, config.channel, match_commands(command, config)
+    end
+  end
+
+  defp match_commands(command, %Config{:commands => commands}) do
+    keys = Enum.map(commands, fn({command_key, _text}) -> command_key end)
+    cond do
+      command in keys ->
+        Enum.find(commands, fn({command_key, text}) -> command == command_key end)
+        |> elem(1)
+      true ->
+        ""
     end
   end
 

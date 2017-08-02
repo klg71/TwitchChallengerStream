@@ -11,11 +11,12 @@ defmodule RiotApi.Bot.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
-      worker(RiotApi.Bot, [%{:nick => "klg71"}]),
-      worker(RiotApi.Votes, [%{}]),
-      worker(RiotApi, ["ids_comp.txt"]),
-      worker(RiotApi.Twitch, [])
-      worker(RiotApi.ChallengerCrawler, [])
+      # worker(RiotApi.Bot, [%{:nick => "klg71"}]),
+      # worker(RiotApi.Votes, [%{}]),
+      # worker(RiotApi, ["ids_comp.txt"]),
+      # worker(RiotApi.Twitch, []),
+      # worker(RiotApi.ChallengerCrawler, []),
+      worker(RiotApi.WebServer, []),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

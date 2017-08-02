@@ -14,7 +14,18 @@ defmodule RiotApi do
   """
 
   def start_link(summoner_file) do
-    config = %{:summoner_file => summoner_file, :updated => ~N[2000-01-01 00:00:00],:summoners => [], :currentgame => %{}}
+    champions = File.read!("champions.txt")
+                |> Poison.decode!()
+                |> Map.get("data")
+                |> Enum.map(fn({champion,%{"id": id}}) -> {id, champion} end)
+                |> Enum.reduce(%{},fn({id, champion}, acc) -> Map.put(acc, id, champion) end)
+    config = %{
+      :summoner_file => summoner_file,
+      :updated => ~N[2000-01-01 00:00:00],
+      :summoners => [],
+      :currentgame => %{},
+      :champions => champions
+    }
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
@@ -56,6 +67,10 @@ defmodule RiotApi do
 
   def handle_call(:get_current_game, _from, config) do
     {:reply, Map.get(config, :currentgame, %{}), config}
+  end
+
+  def handle_call(:get_champions, _from, config) do
+    {:reply, Map.get(config, :champions, %{}), config}
   end
 
 
@@ -266,6 +281,10 @@ defmodule RiotApi do
 
   defp key do
     Application.fetch_env!(:riot_api, :riot_key)
+  end
+
+  def get_champions do
+    GenServer.call(__MODULE__, :get_champions)
   end
 
 end

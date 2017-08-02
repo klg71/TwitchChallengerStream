@@ -16,7 +16,7 @@ defmodule RiotApi.Mixfile do
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :cowboy, :plug],
       applications: [:httpotion,],
       mod: {RiotApi.Bot.Application, []},
     ]
@@ -35,7 +35,9 @@ defmodule RiotApi.Mixfile do
     [
       {:httpotion, "~> 3.0.2"},
       {:poison, "~> 3.1"},
-      {:exirc, "~> 1.0.1"}
+      {:exirc, "~> 1.0.1"},
+      {:cowboy, "~> 1.0.3"},
+      {:plug, "~> 1.0"}
     ]
   end
 end
