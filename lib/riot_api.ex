@@ -47,6 +47,7 @@ defmodule RiotApi do
         Logger.info(Integer.to_string gameid)
         Task.async(fn -> spectate_game(gameid, key) end)
         Process.send_after(self(), :check_game, 10_000)
+        Process.send_after(self(), :configure_game, 180_0000)
         RiotApi.Votes.reset_votes()
         RiotApi.Bot.send_message("Votes resetted!")
         new_config=Map.put(config, :currentgame, match)
@@ -122,6 +123,13 @@ defmodule RiotApi do
         RiotApi.Twitch.send_channel_title("Spectating EUW Challenger: "<>name)
         open_game(name)
       end
+    {:noreply, config}
+  end
+
+  def handle_info(:configure_game, config) do
+    shell = "league_spectator.exe"
+    Logger.info(shell)
+    _task = Task.async(fn -> shell |> String.to_char_list |> :os.cmd end)
     {:noreply, config}
   end
 
@@ -252,7 +260,7 @@ defmodule RiotApi do
     File.cd("C:\\Riot Games\\League of Legends\\RADS\\projects\\lol_game_client\\releases\\0.0.1.123\\deploy")
     shell = "start \"\" \"League of Legends.exe\" \"8394\" \"LoLLauncher.exe\" \"\" \"spectator spectator.euw1.lol.riotgames.com:80 "<>observer_key<>" "<>Integer.to_string(gameid)<>" EUW1\" \"-UseRads\""
     Logger.info(shell)
-    # _task = Task.async(fn -> shell |> String.to_char_list |> :os.cmd end)
+    _task = Task.async(fn -> shell |> String.to_char_list |> :os.cmd end)
     :timer.sleep(1000)
     File.cd(current_path)
   end
