@@ -32,8 +32,8 @@ defmodule RiotApi do
 
   def init(config) do
     Process.send_after(self(), :update, 5_000)
-    # RiotApi.Bot.send_message("New game starts in 20s")
-    # Process.send_after(self(), :new_game, 20_000)
+    RiotApi.Bot.send_message("New game starts in 20s")
+    Process.send_after(self(), :new_game, 20_000)
     {:ok, config}
   end
 
@@ -45,7 +45,7 @@ defmodule RiotApi do
     case Enum.find(config.summoners, fn(%{:name => summoner_name})->summoner_name == summoner end) do
       %{gameid: gameid, observer_key: key, match: match} ->
         Logger.info(Integer.to_string gameid)
-        Task.async(fn -> spectate_game(gameid, key) end)
+        Task.async(fn -> RiotApi.Spectator.spectate_game(gameid, key) end)
         Process.send_after(self(), :check_game, 10_000)
         Process.send_after(self(), :configure_game, 180_0000)
         RiotApi.Votes.reset_votes()
@@ -84,7 +84,7 @@ defmodule RiotApi do
   end
 
   def handle_info(:end_game, config) do
-        Task.async(fn->kill_game() end)
+        Task.async(fn->RiotApi.Spectator.kill_game() end)
         RiotApi.Bot.send_message("GG!")
         RiotApi.Bot.send_message("Game ended! New game starts in 120s")
         RiotApi.Bot.send_message("Last chance to vote!")
@@ -184,34 +184,6 @@ defmodule RiotApi do
     GenServer.cast(__MODULE__, {:open_game, summoner})
   end
 
-  def get_matches_for_summoners([head|[]]) do
-    :timer.sleep(100)
-    {:ok, match} = url()<>"/lol/spectator/v3/active-games/by-summoner/"<>URI.encode(Integer.to_string(Map.get(head, "id")))<>"?api_key="<>key() 
-         |> HTTPotion.get()
-         |> Map.get(:body)
-         |> Poison.decode 
-    gameid = Map.get(match, "gameId")
-    observer_key = get_in(match,["observers", "encryptionKey"])
-    result = case match do
-      %{"status" => %{"status_code" => 404}} -> []
-      %{"status" => %{"status_code" => 403}} -> 
-        Logger.warn("Api key expired")
-        []
-      %{"status" => %{"status_code" => 429}} -> 
-         Logger.info("API Rate exceeded waiting 10 seconds")
-         :timer.sleep(10_000)
-         get_matches_for_summoners([head|[]])
-      %{"status" => %{"status_code" => 500}} -> []
-      %{"gameType"=>"MATCHED_GAME", "gameMode" => "CLASSIC"} ->
-         Map.get(match, "participants")
-         |> Enum.map(fn(%{"summonerId" => id, "summonerName" => name})->%{gameid: gameid,observer_key: observer_key, summonerid: id, name: name, match: match} end)
-         |> Enum.filter(fn(%{summonerid: id}) -> Enum.any?([head|[]], fn(%{"id"=>chall_id}) -> chall_id == id end) end)
-      _ ->
-        []
-    end
-    result
-  end
-
   def get_matches_for_summoners([head|tail]) do
     {:ok, match} = url()<>"/lol/spectator/v3/active-games/by-summoner/"<>URI.encode(Integer.to_string(Map.get(head, "id")))<>"?api_key="<>key() 
          |> HTTPotion.get()
@@ -234,14 +206,16 @@ defmodule RiotApi do
          |> Enum.map(fn(%{"summonerId" => id, "summonerName" => name})->%{gameid: gameid,observer_key: observer_key, id: id, name: name, match: match} end)
          |> Enum.filter(fn(%{id: id}) -> Enum.any?([head|tail], fn(%{"id"=>chall_id}) -> chall_id == id end) end)
     end
-    reduced = Enum.filter(tail, fn (%{"id"=>id}) ->not id in Enum.map(result, &(&1.id)) end)
-    result++get_matches_for_summoners(reduced)
+    case Enum.filter(tail, fn (%{"id"=>id}) ->not id in Enum.map(result, &(&1.id)) end) do
+      [] -> result
+      reduced -> result++get_matches_for_summoners(reduced)
+    end
   end
 
   def is_match_ended(gameid) do
     {:ok, id} = url()<>"/lol/match/v3/matches/"<>URI.encode(Integer.to_string(gameid))<>"?api_key="<>key() 
          |> HTTPotion.get()
-         |> Map.get(:body)
+         |> Map.get(:body,"{\"status\":{\"status_code\": 429}}")
          |> Poison.decode 
      case id do
        %{"status" => %{"status_code" => 404}} ->
@@ -255,27 +229,11 @@ defmodule RiotApi do
      end
   end
 
-  def spectate_game(gameid, observer_key) do
-    current_path = File.cwd!
-    File.cd("C:\\Riot Games\\League of Legends\\RADS\\projects\\lol_game_client\\releases\\0.0.1.123\\deploy")
-    shell = "start \"\" \"League of Legends.exe\" \"8394\" \"LoLLauncher.exe\" \"\" \"spectator spectator.euw1.lol.riotgames.com:80 "<>observer_key<>" "<>Integer.to_string(gameid)<>" EUW1\" \"-UseRads\""
-    Logger.info(shell)
-    _task = Task.async(fn -> shell |> String.to_char_list |> :os.cmd end)
-    :timer.sleep(1000)
-    File.cd(current_path)
-  end
-
-  def kill_game do
-    shell = "taskkill /IM \"League of Legends.exe\""
-    Logger.info(shell)
-    _task = Task.async(fn -> shell |> String.to_char_list |> :os.cmd end)
-  end
-  
 
   def get_match_info(matchid) do
     {:ok, match} = url()<>"/lol/match/v3/matches/"<>URI.encode(Integer.to_string(matchid))<>"?api_key="<>key() 
          |> HTTPotion.get()
-         |> Map.get(:body)
+         |> Map.get(:body,"{\"status\":{\"status_code\": 429}}")
          |> Poison.decode 
     match
   end

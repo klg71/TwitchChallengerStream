@@ -2,7 +2,7 @@ defmodule RiotApi.WebServer do
   use Plug.Router
   require Logger
 
-  plug Plug.Logger
+  plug Plug.Logger, log: :warn
   plug :match
   plug :dispatch
 
