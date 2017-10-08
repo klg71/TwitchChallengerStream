@@ -1,0 +1,41 @@
+{
+	"folders":
+    [
+    	{
+    		"path":".",
+    		"name": "Root"
+    	},
+        {
+            "path": "lib",
+            "name": "Sources",
+            "follow_symlinks": true
+        },
+        {
+            "path": "config",
+            "name": "Configuration",
+        },
+        {
+            "path": "test",
+            "name": "Test",
+        }
+    ],
+    "settings":
+    {
+        "tab_size": 4
+    },
+    "build_systems":
+    [
+        {
+            "name": "List",
+            "shell_cmd": "dir"
+        },
+        {
+        	"name": "iex",
+        	"shell_cmd": "iex -S mix"
+        },
+        {
+        	"name": "Update Dependencies",
+        	"shell_cmd": "mix deps.get"
+        }
+    ]
+}

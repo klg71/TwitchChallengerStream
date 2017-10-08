@@ -11,7 +11,7 @@ defmodule RiotApi.Bot.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
-      worker(RiotApi, ["ids_comp.txt"]),
+      worker(RiotApi, ["ids.json"]),
       worker(RiotApi.Bot, [%{:nick => "klg71"}]),
       worker(RiotApi.Votes, [%{}]),
       worker(RiotApi.Twitch, []),

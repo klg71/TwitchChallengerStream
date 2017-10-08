@@ -37,7 +37,9 @@ defmodule RiotApi.Mixfile do
       {:poison, "~> 3.1"},
       {:exirc, "~> 1.0.1"},
       {:cowboy, "~> 1.0.3"},
-      {:plug, "~> 1.0"}
+      {:plug, "~> 1.0"},
+      {:timber, "~> 2.5"},
+	    {:html_entities, "~> 0.3"},
     ]
   end
 end

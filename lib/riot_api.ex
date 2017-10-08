@@ -44,7 +44,8 @@ defmodule RiotApi do
   def handle_cast({:open_game, summoner}, config) do
     case Enum.find(config.summoners, fn(%{:name => summoner_name})->summoner_name == summoner end) do
       %{gameid: gameid, observer_key: key, match: match} ->
-        Logger.info(Integer.to_string gameid)
+        GenServer.cast(__MODULE__,:empty_summoners)
+        Logger.info("Spectating game: "<>Integer.to_string gameid)
         Task.async(fn -> RiotApi.Spectator.spectate_game(gameid, key) end)
         Process.send_after(self(), :check_game, 10_000)
         Process.send_after(self(), :configure_game, 180_0000)
@@ -61,6 +62,12 @@ defmodule RiotApi do
   def handle_cast({:updated_summoners, summoners}, config) do
     Logger.info("Updated summoner list")
     new_config=Map.put(config, :updated, NaiveDateTime.utc_now()) |> Map.put(:summoners, summoners)
+    {:noreply, new_config}
+  end
+
+  def handle_cast(:empty_summoners, config) do
+    Logger.info("Emptieing summoner list")
+    new_config= Map.put(config, :summoners, [])
     {:noreply, new_config}
   end
 
@@ -136,25 +143,74 @@ defmodule RiotApi do
   def handle_info(_, config) do
    {:noreply, config}
   end
+  
   def query_players(filename) do
     {:ok, content} = File.read(filename)
     {:ok, player_ids} = content |> String.split("\r\n")
                          |> Enum.map(&RiotApi.get_summoner_id(&1))
                          |> Poison.encode(pretty: true)
-    File.write("ids.txt", player_ids)
+    File.write("ids.json", player_ids)
   end
 
   def get_summoner_id("") do
     %{}
   end
 
-  def get_summoner_id(summoner) do
-    {:ok, id} = url()<>"/lol/summoner/v3/summoners/by-name/"<>(URI.encode(summoner))<>"?api_key="<>key() 
-         |> HTTPotion.get()
-         |> Map.get(:body)
-         |> Poison.decode
-    %{accountid: Map.get(id,"accountId"), id: Map.get(id,"id"), name: summoner}
+  def do_request(url) do
+	headers = ["User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0", 
+					#"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+					"Accept-Charset": "application/x-www-form-urlencoded; charset=UTF-8",
+					"Origin": "null",
+					"X-Riot-Token": key(),
+					"Accept-Language": "de,en-US;q=0.7,en;q=0.3",
+					]
+	answer = URI.encode(url)
+         |> HTTPotion.get(headers: headers)
+	
+  #IO.inspect(answer)
+
+	case answer do
+    %{headers: %{hdrs: %{"retry-after" => seconds}}} ->
+      Logger.info("Api rate exceeded waiting: "<>seconds<>"s")
+        :timer.sleep(1_000*String.to_integer(seconds))
+        do_request(url)
+		%{message: "req_timedout"} -> 
+			Logger.info("req_timeout")
+         :timer.sleep(1_000)
+			do_request(url)
+		%{message: "{:conn_failed, :error}"} -> 
+			Logger.info("conn_failed")
+         :timer.sleep(1_000)
+			do_request(url)
+		message -> message
+	end
   end
+  
+  def get_summoner_id(summoner) do
+  
+	answer = url()<>"/lol/summoner/v3/summoners/by-name/"<>summoner<>"?api_key="<>key()
+         |> do_request
+	IO.inspect(answer)
+	{:ok, match} = answer	 
+         |> Map.get(:body)
+		 |> Poison.decode
+	 case match do
+       %{"status" => %{"status_code" => 404}} -> []
+       %{"status" => %{"status_code" => 403}} -> 
+         Logger.warn("Api key expired")
+         []
+       %{"status" => %{"status_code" => 429}} -> 
+	   
+		 IO.inspect(Map.get(answer, :headers))
+         Logger.info("API Rate exceeded waiting 10 seconds")
+         :timer.sleep(10_000)
+         get_summoner_id(summoner)
+       %{"status" => %{"status_code" => 500}} -> []
+	   id -> 
+		%{accountid: Map.get(id,"accountId"), id: Map.get(id,"id"), name: summoner}
+    end
+  end
+  
 
   defp update_playing_summoners(config) do
     diff = NaiveDateTime.diff(NaiveDateTime.utc_now(), config.updated)
@@ -185,8 +241,9 @@ defmodule RiotApi do
   end
 
   def get_matches_for_summoners([head|tail]) do
+	Logger.info("Remaining: "<>Integer.to_string(Enum.count(tail)))
     {:ok, match} = url()<>"/lol/spectator/v3/active-games/by-summoner/"<>URI.encode(Integer.to_string(Map.get(head, "id")))<>"?api_key="<>key() 
-         |> HTTPotion.get()
+         |> do_request
          |> Map.get(:body,"{\"status\":{\"status_code\": 429}}")
          |> Poison.decode 
     gameid = Map.get(match, "gameId")
@@ -202,9 +259,14 @@ defmodule RiotApi do
          get_matches_for_summoners([head|tail])
        %{"status" => %{"status_code" => 500}} -> []
        result ->
-         Map.get(result, "participants")
-         |> Enum.map(fn(%{"summonerId" => id, "summonerName" => name})->%{gameid: gameid,observer_key: observer_key, id: id, name: name, match: match} end)
-         |> Enum.filter(fn(%{id: id}) -> Enum.any?([head|tail], fn(%{"id"=>chall_id}) -> chall_id == id end) end)
+        case check_match_ended(gameid) do
+          false -> 
+            Map.get(result, "participants")
+            |> Enum.map(fn(%{"summonerId" => id, "summonerName" => name})->%{gameid: gameid,observer_key: observer_key, id: id, name: name, match: match} end)
+            |> Enum.filter(fn(%{id: id}) -> Enum.any?([head|tail], fn(%{"id"=>chall_id}) -> chall_id == id end) end)
+          true -> 
+            get_matches_for_summoners(tail)
+        end
     end
     case Enum.filter(tail, fn (%{"id"=>id}) ->not id in Enum.map(result, &(&1.id)) end) do
       [] -> result
@@ -212,27 +274,37 @@ defmodule RiotApi do
     end
   end
 
-  def is_match_ended(gameid) do
+  def check_match_ended(gameid) do
     {:ok, id} = url()<>"/lol/match/v3/matches/"<>URI.encode(Integer.to_string(gameid))<>"?api_key="<>key() 
-         |> HTTPotion.get()
+         |> do_request
          |> Map.get(:body,"{\"status\":{\"status_code\": 429}}")
          |> Poison.decode 
-     case id do
+    case id do
        %{"status" => %{"status_code" => 404}} ->
-          Process.send_after(self(), :check_game, 30_000)
+          false
        %{"status" => %{"status_code" => 429}} ->
          Logger.info("API Rate exceeded waiting 30 seconds")
-          Process.send_after(self(), :check_game, 30_000)
+         :timer.sleep(30_000)
+         check_match_ended(gameid)
        %{"status" => %{"status_code" => 500}} -> false
        _ ->
-        Process.send_after(self(), :end_game, 200_000)
+        true
+     end     
+  end
+
+  def is_match_ended(gameid) do
+     case check_match_ended(gameid) do
+       false ->
+          Process.send_after(self(), :check_game, 30_000)
+       true ->
+          Process.send_after(self(), :end_game, 200_000)
      end
   end
 
 
   def get_match_info(matchid) do
     {:ok, match} = url()<>"/lol/match/v3/matches/"<>URI.encode(Integer.to_string(matchid))<>"?api_key="<>key() 
-         |> HTTPotion.get()
+         |> do_request
          |> Map.get(:body,"{\"status\":{\"status_code\": 429}}")
          |> Poison.decode 
     match

@@ -31,3 +31,6 @@ use Mix.Config
 #
 #     import_config "#{Mix.env}.exs"
 import_config "prod.secret.exs"
+
+# Import Timber, structured logging
+import_config "timber.exs"
