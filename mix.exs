@@ -40,6 +40,7 @@ defmodule RiotApi.Mixfile do
       {:plug, "~> 1.0"},
       {:timber, "~> 2.5"},
 	    {:html_entities, "~> 0.3"},
+      {:ex_doc, "~> 0.11", only: :dev},
     ]
   end
 end

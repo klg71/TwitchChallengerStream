@@ -24,4 +24,5 @@ defmodule RiotApi.Bot.Application do
     opts = [strategy: :one_for_one, name: Sequence.Supervisor]
     Supervisor.start_link(children, opts)
   end
+
 end

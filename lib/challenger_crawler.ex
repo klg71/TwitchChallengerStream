@@ -3,9 +3,11 @@ defmodule RiotApi.ChallengerCrawler do
   require Logger
 
   @moduledoc """
+  Documentation for RiotApi.ChallengerCrawler
   """
 
   @doc """
+  Contains methods to parse challengers from leagueofgraphs.com
   """
 
   def start_link do

@@ -1,5 +1,14 @@
 defmodule RiotApi.Votes do
   use GenServer
+  use Logger
+
+  @moduledoc """
+  Documentation for RiotApi.Votes
+  """
+
+  @doc """
+  Genserver for Voting. Saves votes per summoners.
+  """
 
   def start_link(votes) do
     GenServer.start_link(__MODULE__, votes, name: __MODULE__)
@@ -14,6 +23,7 @@ defmodule RiotApi.Votes do
   end
 
   def handle_cast(:reset_votes, _votes) do
+    RiotApi.Bot.send_message("Votes resetted!")
     {:noreply, %{}}
   end
 
@@ -31,5 +41,12 @@ defmodule RiotApi.Votes do
 
   def get_votes do
     GenServer.call(__MODULE__, :get_votes)
+  end
+
+  def get_votes_list(summoners) do
+    RiotApi.Votes.get_votes
+    |> Map.to_list
+    |> Enum.sort(fn ({_name1, vote1}, {_name2, vote2}) -> vote1>=vote2 end)
+    |> Enum.filter(fn({name, _vote}) -> name in summoners end)
   end
 end

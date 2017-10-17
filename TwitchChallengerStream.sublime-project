@@ -1,22 +1,10 @@
 {
-	"folders":
+    "folders":
     [
-    	{
-    		"path":".",
-    		"name": "Root"
-    	},
         {
-            "path": "lib",
-            "name": "Sources",
-            "follow_symlinks": true
-        },
-        {
-            "path": "config",
-            "name": "Configuration",
-        },
-        {
-            "path": "test",
-            "name": "Test",
+            "path":".",
+            "name": "TwitchChallengerStream",
+            "folder_exclude_patterns": ["_build"]
         }
     ],
     "settings":
@@ -30,12 +18,16 @@
             "shell_cmd": "dir"
         },
         {
-        	"name": "iex",
-        	"shell_cmd": "iex -S mix"
+            "name": "iex",
+            "shell_cmd": "iex -S mix"
         },
         {
-        	"name": "Update Dependencies",
-        	"shell_cmd": "mix deps.get"
+            "name": "Update Dependencies",
+            "shell_cmd": "mix deps.get"
+        },
+        {
+            "name": "Open explorer",
+            "shell_cmd": "explorer ."
         }
     ]
 }

@@ -2,6 +2,14 @@ defmodule RiotApi.Bot do
   use GenServer
   require Logger
 
+  @moduledoc """
+  Documentation for RiotApi.Bot
+  """
+
+  @doc """
+  TS3-Bot for posting spectator specific informations
+  """
+  
   defmodule Config do
     defstruct server:  "irc.twitch.tv",
               port:    6667,

@@ -7,9 +7,11 @@ defmodule RiotApi.WebServer do
   plug :dispatch
 
   @moduledoc """
+  Documentation for RiotApi.WebServer
   """
 
   @doc """
+  Renders of game screen with current votes and games
   """
 
   @positions ["top", "jungle", "mid", "bot", "support"]
